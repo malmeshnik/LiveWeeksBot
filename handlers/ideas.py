@@ -10,11 +10,10 @@ from config import ADMIN_IDS
 
 router = Router()
 
-@router.callback_query(F.data == "suggest_idea")
-async def suggest_idea(callback: CallbackQuery, state: FSMContext):
+@router.message(F.text == "💡 Запропонувати ідею")
+async def suggest_idea(message: Message, state: FSMContext):
     """Запропонувати ідею для розвитку"""
-    await callback.answer()
-    await callback.message.answer(
+    await message.answer(
         "Поділіться вашою ідеєю для покращення цього бота. "
         "Напишіть, що б ви хотіли додати або змінити."
     )

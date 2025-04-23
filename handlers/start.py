@@ -26,23 +26,22 @@ async def cmd_start(message: Message, state: FSMContext):
     else:
         # Новий користувач
         await message.answer(
-            "Вітаю! Я бот, який допоможе вам усвідомити цінність часу. "
-            "Я покажу скільки тижнів ви вже прожили і скільки приблизно залишилось.\n\n"
-            "Для початку, вкажіть вашу стать:",
+            "Привіт! Я створений, щоб нагадати: час — це життя. Порахуй зі мною, скільки тижнів ти вже прожив(ла) і скільки лишилось. "
+
+            "Для коректної роботи, будь ласка, вкажіть вашу стать:",
             reply_markup=get_gender_keyboard()
         )
         await state.set_state(RegistrationStates.waiting_for_gender)
 
-@router.callback_query(RegistrationStates.waiting_for_gender, F.data.in_(["male", "female"]))
-async def process_gender(callback: CallbackQuery, state: FSMContext):
+@router.message(RegistrationStates.waiting_for_gender, F.text.in_(["Чоловік", "Жінка"]))
+async def process_gender(message: Message, state: FSMContext):
     """Обробка вибору статі"""
-    await callback.answer()
-    gender = callback.data
+    gender = message.text
     
     await state.update_data(gender=gender)
-    await callback.message.answer(
-        "Дякую! Тепер введіть дату вашого народження у форматі ДД.ММ.РРРР\n"
-        "Наприклад: 01.01.1990"
+    await message.answer(
+        """Залишилось вказати вашу дату народження. Формат: ДД.ММ.РРРР
+Приклад: 22.02.2002"""
     )
     await state.set_state(RegistrationStates.waiting_for_birth_date)
 
@@ -73,6 +72,8 @@ async def process_birth_date(message: Message, state: FSMContext):
         total_days = (today - birth_date).days
         years = total_days // 365
         remaining_days = total_days % 365
+        lived_weeks = remaining_days // 7
+        remaining_days = remaining_days - lived_weeks * 7
         
         # Розраховуємо прожиті тижні
         lived_weeks = total_days // 7
@@ -80,14 +81,31 @@ async def process_birth_date(message: Message, state: FSMContext):
         # Загальна кількість днів життя (залежно від статі)
         total_life_days = 72 * 365 if gender == 'female' else 66 * 365
         days_left = total_life_days - total_days
+
+        if gender == "Чоловік":
+            mess = f'''Середній вік чоловіків в Україні 66 років!
+Ви прожили вже (рік), (тижні), (дні).
+
+Вражає?
+Покажіть друзям свою таблицю життя — пересилайте це повідомлення або поділіться ботом: @(юзер)'''
+        else:
+            mess = f'''Середній вік жінок в Україні 72 роки!
+Ви прожили вже {years} років, {lived_weeks} тижнів,  {remaining_days} днів.
+
+Вражає?
+Покажіть друзям свою таблицю життя — пересилайте це повідомлення або поділіться ботом: @(юзер)'''
         
-        await message.answer_photo(
-            photo=FSInputFile(table_image),
-            caption=f"{message.from_user.first_name}, ти прожив(ла) свій {lived_weeks}-й тиждень!\n"
-                    f"Тобі: {years} років, {remaining_days} днів\n"
-                    f"Жити залишилося всього {days_left} днів!\n\n"
-                    f"Час минає швидше, ніж ми думаємо...",
+        await message.answer(
+            text=mess,
             reply_markup=get_main_menu_keyboard()
+        )
+
+        await message.answer_photo(
+            photo=FSInputFile(table_image)
+        )
+
+        await message.answer(
+            text='Я щотижня надсилатиму вам оновлену таблицю. Побачимось за тиждень!'
         )
         
         await state.clear()

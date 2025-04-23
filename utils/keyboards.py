@@ -3,19 +3,23 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def get_gender_keyboard():
     """Клавіатура для вибору статі"""
-    builder = InlineKeyboardBuilder()
-    builder.add(InlineKeyboardButton(text="Чоловік", callback_data="male"))
-    builder.add(InlineKeyboardButton(text="Жінка", callback_data="female"))
-    return builder.as_markup()
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Чоловік"),
+            KeyboardButton(text="Жінка")]
+        ],
+        resize_keyboard=True
+    )
 
 def get_main_menu_keyboard():
     """Головне меню бота"""
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="📝 Редагувати дані", callback_data="edit_profile"))
-    builder.row(InlineKeyboardButton(text="💡 Запропонувати ідею", callback_data="suggest_idea"))
-    builder.row(InlineKeyboardButton(text="📊 Оновити таблицю", callback_data="update_table"))
-    builder.row(InlineKeyboardButton(text="🔔 Налаштування нагадувань", callback_data="notification_settings"))
-    return builder.as_markup()
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📝 Редагувати дані"),
+            KeyboardButton(text="💡 Запропонувати ідею")]
+        ],
+        resize_keyboard=True
+    )
 
 def get_edit_profile_keyboard():
     """Клавіатура для редагування профілю"""

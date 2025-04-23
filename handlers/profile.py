@@ -22,11 +22,10 @@ from datetime import datetime
 
 router = Router()
 
-@router.callback_query(F.data == "edit_profile")
-async def edit_profile(callback: CallbackQuery):
+@router.message(F.text == "📝 Редагувати дані")
+async def edit_profile(message: Message):
     """Відкриття меню редагування профілю"""
-    await callback.answer()
-    await callback.message.answer(
+    await message.answer(
         "Що саме ви хочете змінити?",
         reply_markup=get_edit_profile_keyboard()
     )
@@ -35,17 +34,17 @@ async def edit_profile(callback: CallbackQuery):
 async def change_gender(callback: CallbackQuery, state: FSMContext):
     """Зміна статі користувача"""
     await callback.answer()
+    await callback.message.delete()
     await callback.message.answer(
         "Виберіть вашу стать:",
         reply_markup=get_gender_keyboard()
     )
     await state.set_state(ProfileStates.waiting_for_new_gender)
 
-@router.callback_query(ProfileStates.waiting_for_new_gender, F.data.in_(["male", "female"]))
+@router.callback_query(ProfileStates.waiting_for_new_gender, F.data.in_(["Чоловік", "Жінка"]))
 async def process_new_gender(callback: CallbackQuery, state: FSMContext):
     """Обробка нової статі"""
-    await callback.answer()
-    gender = callback.data
+    gender = callback.message.text
     user_id = callback.from_user.id
     
     # Оновлюємо стать у БД
@@ -85,6 +84,7 @@ async def process_new_gender(callback: CallbackQuery, state: FSMContext):
 async def change_birth_date(callback: CallbackQuery, state: FSMContext):
     """Зміна дати народження"""
     await callback.answer()
+    await callback.message.delete()
     await callback.message.answer(
         "Введіть вашу нову дату народження у форматі ДД.ММ.РРРР\n"
         "Наприклад: 01.01.1990"
@@ -141,6 +141,7 @@ async def process_new_birth_date(message: Message, state: FSMContext):
 async def confirm_delete_data(callback: CallbackQuery, state: FSMContext):
     """Підтвердження видалення даних"""
     await callback.answer()
+    await callback.message.delete()
     await callback.message.answer(
         "⚠️ Ви впевнені, що хочете видалити всі свої дані? "
         "Ця дія не може бути скасована.",
@@ -152,6 +153,7 @@ async def confirm_delete_data(callback: CallbackQuery, state: FSMContext):
 async def process_delete_data(callback: CallbackQuery, state: FSMContext):
     """Видалення даних користувача"""
     await callback.answer()
+    await callback.message.delete()
     user_id = callback.from_user.id
     
     # Видаляємо дані користувача
@@ -169,6 +171,7 @@ async def process_delete_data(callback: CallbackQuery, state: FSMContext):
 async def cancel_delete_data(callback: CallbackQuery, state: FSMContext):
     """Скасування видалення даних"""
     await callback.answer()
+    await callback.message.delete()
     await callback.message.answer(
         "Видалення даних скасовано.",
         reply_markup=get_main_menu_keyboard()
@@ -179,15 +182,13 @@ async def cancel_delete_data(callback: CallbackQuery, state: FSMContext):
 async def back_to_main_menu(callback: CallbackQuery):
     """Повернення до головного меню"""
     await callback.answer()
-    await callback.message.answer(
-        "Головне меню:",
-        reply_markup=get_main_menu_keyboard()
-    )
+    await callback.message.delete()
 
 @router.callback_query(F.data == "update_table")
 async def update_life_table(callback: CallbackQuery):
     """Оновлення таблиці життя"""
     await callback.answer()
+    await callback.message.delete()
     user_id = callback.from_user.id
     
     # Отримуємо дані користувача
@@ -228,6 +229,7 @@ async def update_life_table(callback: CallbackQuery):
 async def notification_settings(callback: CallbackQuery):
     """Налаштування нагадувань"""
     await callback.answer()
+    await callback.message.delete()
     user_id = callback.from_user.id
     
     # Отримуємо дані користувача
@@ -248,6 +250,7 @@ async def notification_settings(callback: CallbackQuery):
 async def toggle_user_notifications(callback: CallbackQuery):
     """Увімкнути/вимкнути нагадування"""
     await callback.answer()
+    await callback.message.delete()
     user_id = callback.from_user.id
     
     # Отримуємо дані користувача
