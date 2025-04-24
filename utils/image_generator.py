@@ -20,7 +20,7 @@ def generate_life_table(birth_date, gender):
     draw = ImageDraw.Draw(img)
 
     try:
-        font = ImageFont.truetype("DejaVuSans.ttfs", 16)
+        font = ImageFont.truetype("DejaVuSans.ttf", 16)
         font_small = ImageFont.truetype("DejaVuSans.ttf", 8)
     except IOError:
         font = ImageFont.load_default()
