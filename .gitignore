@@ -175,5 +175,3 @@ audio/
 
 # PyPI configuration file
 .pypirc
-
-.env
