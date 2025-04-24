@@ -15,7 +15,8 @@ from database.db_operations import (
     update_user_gender, 
     update_user_birth_date, 
     delete_user_data,
-    toggle_notifications
+    toggle_notifications,
+    get_user_birth
 )
 from utils.image_generator import generate_life_table
 from datetime import datetime
@@ -41,11 +42,11 @@ async def change_gender(callback: CallbackQuery, state: FSMContext):
     )
     await state.set_state(ProfileStates.waiting_for_new_gender)
 
-@router.callback_query(ProfileStates.waiting_for_new_gender, F.data.in_(["Чоловік", "Жінка"]))
-async def process_new_gender(callback: CallbackQuery, state: FSMContext):
+@router.message(ProfileStates.waiting_for_new_gender, F.text.in_(["Чоловік", "Жінка"]))
+async def process_new_gender(message: Message, state: FSMContext):
     """Обробка нової статі"""
-    gender = callback.message.text
-    user_id = callback.from_user.id
+    gender = message.text
+    user_id = message.chat.id
     
     # Оновлюємо стать у БД
     await update_user_gender(user_id, gender)
@@ -66,16 +67,24 @@ async def process_new_gender(callback: CallbackQuery, state: FSMContext):
     lived_weeks = total_days // 7
     
     # Загальна кількість днів життя (залежно від статі)
-    total_life_days = 72 * 365 if gender == 'female' else 66 * 365
+    total_life_days = 72 * 365 if gender == 'Жінка' else 66 * 365
     days_left = total_life_days - total_days
+    lived_text = "прожила" if user.gender == 'Жінка' else "прожив"
+
+    years_left = days_left // 365
+    weeks_left = (days_left % 365) // 7
+    days = (days_left % 365) % 7
     
-    await callback.message.answer_photo(
+    await message.answer_photo(
         photo=FSInputFile(table_image),
-        caption=f"{callback.from_user.first_name}, ти прожив(ла) свій {lived_weeks}-й тиждень!\n"
-                f"Тобі: {years} років, {remaining_days} днів\n"
-                f"Жити залишилося всього {days_left} днів!\n\n"
-                f"Час минає швидше, ніж ми думаємо...",
         reply_markup=get_main_menu_keyboard()
+    )
+
+    await message.answer(
+        text=f"{message.from_user.first_name}, ти {lived_text} свій {lived_weeks}-й тиждень!\n"
+                f"Тобі: {years} років, {remaining_days} днів\n"
+                f"Жити залишилося всього {years_left} років {weeks_left} тижнів та {days} днів!\n\n"
+                f"Час минає швидше, ніж ми думаємо...",
     )
     
     await state.clear()
@@ -83,9 +92,12 @@ async def process_new_gender(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "change_birth_date")
 async def change_birth_date(callback: CallbackQuery, state: FSMContext):
     """Зміна дати народження"""
+    user_id = callback.from_user.id
+    user = await get_user(user_id)
     await callback.answer()
     await callback.message.delete()
     await callback.message.answer(
+        f"<b>Ваша дата народження: {user.birth_date}</b>\n"
         "Введіть вашу нову дату народження у форматі ДД.ММ.РРРР\n"
         "Наприклад: 01.01.1990"
     )
@@ -104,12 +116,11 @@ async def process_new_birth_date(message: Message, state: FSMContext):
         # Отримуємо оновлені дані користувача
         user = await get_user(user_id)
         
-        # Генеруємо оновлену таблицю
+        # Генеруємо та відправляємо таблицю
         table_image = generate_life_table(birth_date, user.gender)
         
-        # Розраховуємо вік та інші дані
         today = datetime.now().date()
-        total_days = (today - birth_date).days
+        total_days = (today - user.birth_date).days
         years = total_days // 365
         remaining_days = total_days % 365
         
@@ -117,18 +128,25 @@ async def process_new_birth_date(message: Message, state: FSMContext):
         lived_weeks = total_days // 7
         
         # Загальна кількість днів життя (залежно від статі)
-        total_life_days = 72 * 365 if user.gender == 'female' else 66 * 365
+        total_life_days = 72 * 365 if user.gender == 'Жінка' else 66 * 365
         days_left = total_life_days - total_days
+        lived_text = "прожила" if user.gender == 'Жінка' else "прожив"
+
+        years_left = days_left // 365
+        weeks_left = (days_left % 365) // 7
+        days = (days_left % 365) % 7
         
         await message.answer_photo(
             photo=FSInputFile(table_image),
-            caption=f"{message.from_user.first_name}, ти прожив(ла) свій {lived_weeks}-й тиждень!\n"
-                    f"Тобі: {years} років, {remaining_days} днів\n"
-                    f"Жити залишилося всього {days_left} днів!\n\n"
-                    f"Час минає швидше, ніж ми думаємо...",
             reply_markup=get_main_menu_keyboard()
         )
-        
+
+        await message.answer(
+            text=f"{message.from_user.first_name}, ти {lived_text} свій {lived_weeks}-й тиждень!\n"
+                    f"Тобі: {years} років, {remaining_days} днів\n"
+                    f"Жити залишилося всього {years_left} років {weeks_left} тижнів та {days} днів!\n\n"
+                    f"Час минає швидше, ніж ми думаємо...",)
+            
         await state.clear()
         
     except ValueError:

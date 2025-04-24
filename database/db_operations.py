@@ -138,6 +138,15 @@ async def get_admin_settings():
             select(AdminSettings).order_by(AdminSettings.id.desc()).limit(1)
         )
         return result.scalars().first()
+    
+async def get_user_birth(user_id):
+    """Отримує дату народження користувача"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(User.birth_date).where(User.id == user_id)
+        )
+        birth_date = result.scalar_one_or_none()
+        return birth_date
 
 async def update_quote(new_quote):
     """Оновлює цитату для нагадувань"""
@@ -164,7 +173,7 @@ async def get_stats():
         male_count_result = await session.execute(
             select(func.count()).select_from(User)
             .where(User.is_active == True)
-            .where(User.gender == 'male')
+            .where(User.gender == 'Чоловік')
         )
         male_count = male_count_result.scalar()
         
@@ -172,7 +181,7 @@ async def get_stats():
         female_count_result = await session.execute(
             select(func.count()).select_from(User)
             .where(User.is_active == True)
-            .where(User.gender == 'female')
+            .where(User.gender == 'Жінка')
         )
         female_count = female_count_result.scalar()
         

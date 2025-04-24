@@ -16,24 +16,44 @@ async def send_notification(bot, user):
         # Розраховуємо вік та інші дані
         today = datetime.now().date()
         total_days = (today - user.birth_date).days
+
+        # Прожиті роки
         years = total_days // 365
-        remaining_days = total_days % 365
-        
-        # Розраховуємо прожиті тижні
-        lived_weeks = total_days // 7
-        
+
+        # Залишок днів після повних років
+        days_after_years = total_days % 365
+
+        # Прожиті тижні після повних років
+        weeks = days_after_years // 7
+
+        # І залишок днів після повних тижнів
+        days = days_after_years % 7
+
+        # Загальна кількість прожитих тижнів (окремо, якщо треба)
+        total_weeks = total_days // 7
+
         # Загальна кількість днів життя (залежно від статі)
-        total_life_days = 72 * 365 if user.gender == 'female' else 66 * 365
-        days_left = total_life_days - total_days
+        total_life_days = 72 * 365 if user.gender == 'Жінка' else 66 * 365
+        days_left = max(0, total_life_days - total_days)
+
+        # Скільки років і тижнів залишилося
+        years_left = days_left // 365
+        weeks_left = (days_left % 365) // 7
+        days = (days_left % 365) % 7
+
+        lived_text = "прожила" if user.gender == 'Жінка' else "прожив"
+
+        text = f'''{user.first_name}, ти {lived_text} свій 1270-й тиждень!
+Тобі: {years} років, {weeks} днів
+Жити залишилося всього {years_left} років {weeks_left} тижнів та {days} днів!
+
+Час минає швидше, ніж ми думаємо...'''
         
         # Формуємо та відправляємо повідомлення
         await bot.send_photo(
             chat_id=user.user_id,
             photo=open(table_image, 'rb'),
-            caption=f"{user.first_name}, ти прожив(ла) свій {lived_weeks}-й тиждень!\n"
-                    f"Тобі: {years} років, {remaining_days} днів\n"
-                    f"Жити залишилося всього {days_left} днів!\n\n"
-                    f"{quote}"
+            caption=text
         )
         
         return True

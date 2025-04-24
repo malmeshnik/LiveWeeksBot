@@ -26,9 +26,9 @@ async def cmd_start(message: Message, state: FSMContext):
     else:
         # Новий користувач
         await message.answer(
-            "Привіт! Я створений, щоб нагадати: час — це життя. Порахуй зі мною, скільки тижнів ти вже прожив(ла) і скільки лишилось. "
+            """Привіт! Я створений, щоб нагадати: час — це життя. Порахуй зі мною, скільки тижнів ти вже прожив(ла) і скільки лишилось.
 
-            "Для коректної роботи, будь ласка, вкажіть вашу стать:",
+Для коректної роботи, будь ласка, вкажіть вашу стать:""",
             reply_markup=get_gender_keyboard()
         )
         await state.set_state(RegistrationStates.waiting_for_gender)
@@ -67,30 +67,44 @@ async def process_birth_date(message: Message, state: FSMContext):
         # Генеруємо та відправляємо таблицю
         table_image = generate_life_table(birth_date, gender)
         
-        # Розраховуємо вік у роках та днях
         today = datetime.now().date()
         total_days = (today - birth_date).days
+
+        # Прожиті роки
         years = total_days // 365
-        remaining_days = total_days % 365
-        lived_weeks = remaining_days // 7
-        remaining_days = remaining_days - lived_weeks * 7
-        
-        # Розраховуємо прожиті тижні
-        lived_weeks = total_days // 7
-        
+
+        # Залишок днів після повних років
+        days_after_years = total_days % 365
+
+        # Прожиті тижні після повних років
+        weeks = days_after_years // 7
+
+        # І залишок днів після повних тижнів
+        days = days_after_years % 7
+
+        # Загальна кількість прожитих тижнів (окремо, якщо треба)
+        total_weeks = total_days // 7
+
         # Загальна кількість днів життя (залежно від статі)
-        total_life_days = 72 * 365 if gender == 'female' else 66 * 365
-        days_left = total_life_days - total_days
+        total_life_days = 72 * 365 if gender == 'Жінка' else 66 * 365
+        days_left = max(0, total_life_days - total_days)
+
+        # Скільки років і тижнів залишилося
+        years_left = days_left // 365
+        weeks_left = (days_left % 365) // 7
+        days = (days_left % 365) % 7
 
         if gender == "Чоловік":
-            mess = f'''Середній вік чоловіків в Україні 66 років!
-Ви прожили вже (рік), (тижні), (дні).
+            mess = f'''Середній вік смерті чоловіків в Україні 66 років!
+Ви прожили вже {years} років, {weeks} тижнів,  {days} днів.
+Залишилося приблизно {years_left} років та {weeks_left} тижнів та {days} днів
 
 Вражає?
 Покажіть друзям свою таблицю життя — пересилайте це повідомлення або поділіться ботом: @(юзер)'''
         else:
-            mess = f'''Середній вік жінок в Україні 72 роки!
-Ви прожили вже {years} років, {lived_weeks} тижнів,  {remaining_days} днів.
+            mess = f'''Середній вік смерті жінок в Україні 72 роки!
+Ви прожили вже {years} років, {weeks} тижнів,  {days} днів.
+Залишилося приблизно {years_left} років та {weeks_left} тижнів та {days} днів
 
 Вражає?
 Покажіть друзям свою таблицю життя — пересилайте це повідомлення або поділіться ботом: @(юзер)'''
@@ -105,7 +119,7 @@ async def process_birth_date(message: Message, state: FSMContext):
         )
 
         await message.answer(
-            text='Я щотижня надсилатиму вам оновлену таблицю. Побачимось за тиждень!'
+            text='Ми не в змозі зупинити час, але можемо навчитися цінувати кожну його мить. Я щотижня надсилатиму тобі тихе нагадування про це. Побачимось через 7 днів.'
         )
         
         await state.clear()

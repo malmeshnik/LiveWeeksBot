@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 # Завантаження змінних оточення з .env файлу
-load_dotenv()
+load_dotenv('.env', override=True)
 
 # Токен бота
 BOT_TOKEN = os.getenv("BOT_TOKEN")

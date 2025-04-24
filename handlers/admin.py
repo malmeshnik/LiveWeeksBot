@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
@@ -65,43 +65,60 @@ async def process_admin_broadcast(callback: CallbackQuery, state: FSMContext):
 
 @router.message(AdminStates.waiting_for_broadcast_text)
 async def process_broadcast_text(message: Message, state: FSMContext):
-    """Обробка тексту розсилки"""
     if message.from_user.id in ADMIN_IDS:
-        await state.update_data(broadcast_text=message.text)
-        await message.answer(
-            "Виберіть дію:",
-            reply_markup=get_admin_broadcast_keyboard()
-        )
-    else:
-        await message.answer("У вас немає доступу до цієї команди.")
+        if message.photo:
+            file = await message.bot.download(message.photo[-1])
+            photo_bytes = file.read()
+            await state.update_data({
+                "broadcast_type": "photo",
+                "photo_bytes": photo_bytes,
+                "caption": message.caption or ""
+            })
+        else:
+            await state.update_data({
+                "broadcast_type": "text",
+                "text": message.text
+            })
+
+        await message.answer("Виберіть дію:", reply_markup=get_admin_broadcast_keyboard())
 
 @router.callback_query(F.data == "send_broadcast_now")
 async def send_broadcast_now(callback: CallbackQuery, state: FSMContext):
-    """Відправка розсилки негайно"""
+    """Відправка розсилки негайно (текст або фото)"""
     if callback.from_user.id in ADMIN_IDS:
         await callback.answer()
-        
+
         user_data = await state.get_data()
-        broadcast_text = user_data.get("broadcast_text", "")
-        
+        broadcast_type = user_data.get("broadcast_type")
+
         users = await get_all_active_users()
         sent_count = 0
         errors_count = 0
-        
+
         await callback.message.answer("Розпочато розсилку...")
-        
+
         for user in users:
             try:
-                await callback.bot.send_message(
-                    chat_id=user.user_id,
-                    text=broadcast_text,
-                    parse_mode="HTML"
-                )
+                if broadcast_type == "photo":
+                    photo_bytes = user_data["photo_bytes"]
+                    file = BufferedInputFile(photo_bytes, filename="photo.jpg")
+                    await callback.bot.send_photo(
+                        chat_id=user.user_id,
+                        photo=file,
+                        caption=user_data["caption"],
+                        parse_mode="HTML"
+                    )
+                else:
+                    await callback.bot.send_message(
+                        chat_id=user.user_id,
+                        text=user_data["text"],
+                        parse_mode="HTML"
+                    )
                 sent_count += 1
             except Exception as e:
                 errors_count += 1
                 print(f"Помилка розсилки для {user.user_id}: {e}")
-        
+
         await callback.message.answer(
             f"Розсилку завершено!\n"
             f"✅ Успішно відправлено: {sent_count}\n"

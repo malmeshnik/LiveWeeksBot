@@ -26,7 +26,6 @@ def get_edit_profile_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text="👤 Змінити стать", callback_data="change_gender"))
     builder.row(InlineKeyboardButton(text="📅 Змінити дату народження", callback_data="change_birth_date"))
-    builder.row(InlineKeyboardButton(text="❌ Видалити всі дані", callback_data="delete_data"))
     builder.row(InlineKeyboardButton(text="↩️ Назад", callback_data="back_to_main"))
     return builder.as_markup()
 
