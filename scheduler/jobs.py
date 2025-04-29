@@ -19,29 +19,29 @@ def setup_scheduler(bot):
         scheduler.add_jobstore(jobstore, alias='default')
         
         # Додаємо щотижневе нагадування (кожної неділі о 12:00)
-        # scheduler.add_job(
-        #     weekly_reminder,
-        #     'cron',
-        #     day_of_week='sun',
-        #     hour=12,
-        #     minute=0,
-        #     kwargs={'bot': bot},
-        #     id='weekly_reminder',
-        #     replace_existing=True
-        # )
-
-        run_time = datetime.now() + timedelta(minutes=5)
-
         scheduler.add_job(
             weekly_reminder,
             'cron',
-            day_of_week=run_time.strftime('%a').lower(),  # або просто '*' для будь-якого дня
-            hour=run_time.hour,
-            minute=run_time.minute,
+            day_of_week='sun',
+            hour=12,
+            minute=0,
             kwargs={'bot': bot},
-            id='test_weekly_reminder',
+            id='weekly_reminder',
             replace_existing=True
         )
+
+        # run_time = datetime.now() + timedelta(minutes=5)
+
+        # scheduler.add_job(
+        #     weekly_reminder,
+        #     'cron',
+        #     day_of_week=run_time.strftime('%a').lower(),  # або просто '*' для будь-якого дня
+        #     hour=run_time.hour,
+        #     minute=run_time.minute,
+        #     kwargs={'bot': bot},
+        #     id='test_weekly_reminder',
+        #     replace_existing=True
+        # )
     
     return scheduler
 
