@@ -1,6 +1,6 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from utils.notifications import send_notifications_to_all
 from database.db_operations import get_all_active_users
@@ -19,14 +19,27 @@ def setup_scheduler(bot):
         scheduler.add_jobstore(jobstore, alias='default')
         
         # Додаємо щотижневе нагадування (кожної неділі о 12:00)
+        # scheduler.add_job(
+        #     weekly_reminder,
+        #     'cron',
+        #     day_of_week='sun',
+        #     hour=12,
+        #     minute=0,
+        #     kwargs={'bot': bot},
+        #     id='weekly_reminder',
+        #     replace_existing=True
+        # )
+
+        run_time = datetime.now() + timedelta(minutes=5)
+
         scheduler.add_job(
             weekly_reminder,
             'cron',
-            day_of_week='sun',
-            hour=12,
-            minute=0,
+            day_of_week=run_time.strftime('%a').lower(),  # або просто '*' для будь-якого дня
+            hour=run_time.hour,
+            minute=run_time.minute,
             kwargs={'bot': bot},
-            id='weekly_reminder',
+            id='test_weekly_reminder',
             replace_existing=True
         )
     

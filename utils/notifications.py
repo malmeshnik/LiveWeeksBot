@@ -1,3 +1,5 @@
+from aiogram.types import FSInputFile
+
 from datetime import datetime, timedelta
 
 from database.db_operations import get_all_active_users, get_admin_settings
@@ -44,16 +46,20 @@ async def send_notification(bot, user):
         lived_text = "прожила" if user.gender == 'Жінка' else "прожив"
 
         text = f'''{user.first_name}, ти {lived_text} свій 1270-й тиждень!
-Тобі: {years} років, {weeks} днів
+Тобі: {years} років, {weeks} тижнів та {days} днів.
 Жити залишилося всього {years_left} років {weeks_left} тижнів та {days} днів!
 
 Час минає швидше, ніж ми думаємо...'''
+
+        await bot.send_message(
+            chat_id=user.user_id,
+            text=text,
+        )
         
         # Формуємо та відправляємо повідомлення
         await bot.send_photo(
             chat_id=user.user_id,
-            photo=open(table_image, 'rb'),
-            caption=text
+            photo=FSInputFile(table_image)
         )
         
         return True
